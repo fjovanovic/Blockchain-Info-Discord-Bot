@@ -3,6 +3,7 @@ from discord.ext import commands, tasks
 import requests
 from keep_alive import keep_alive
 from replit import db
+from constants import PRICE_ALERTS_CHANNEL, COINGECKO_COINS_MARKETS_URL
 
 client = commands.Bot(command_prefix='!')
 
@@ -18,8 +19,7 @@ async def update_database():
     await client.wait_until_ready()  # without this it won't work
     print('price-check-1h')
 
-    url = 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd'
-    data = requests.get(url).json()
+    data = requests.get(COINGECKO_COINS_MARKETS_URL).json()
     symbols = []
 
     text_positive = 'Next cryptocurrencies are up at least 10% in past hour:\n'
@@ -28,7 +28,7 @@ async def update_database():
     text_negative = 'Next cryptocurrencies are down at least 10% in past hour:\n'
     negative = False
 
-    channel = client.get_channel(901822736693870623)  # channel price-alerts
+    channel = client.get_channel(PRICE_ALERTS_CHANNEL)
 
     for i in range(len(data)):
         current_price = data[i]['current_price']
@@ -73,8 +73,7 @@ update_database.start()
 # Check the price of symbol: !check symbol
 @client.command()
 async def price(ctx, symbol):
-    url = 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd'
-    data = requests.get(url).json()
+    data = requests.get(COINGECKO_COINS_MARKETS_URL).json()
     not_found = True
 
     for crypto in data:
@@ -99,8 +98,7 @@ async def bought(ctx, symbol, bought_price):
         await ctx.send('Price is not correct, please send us correct price')
         return
 
-    url = 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd'
-    data = requests.get(url).json()
+    data = requests.get(COINGECKO_COINS_MARKETS_URL).json()
     not_found = True
 
     for crypto in data:
@@ -124,8 +122,7 @@ async def bought(ctx, symbol, bought_price):
 # 24h price change check: !daychange symbol
 @client.command()
 async def daychange(ctx, symbol):
-    url = 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd'
-    data = requests.get(url).json()
+    data = requests.get(COINGECKO_COINS_MARKETS_URL).json()
     not_found = True
 
     for crypto in data:
@@ -149,8 +146,7 @@ async def daychange(ctx, symbol):
 # ATH check: !ath symbol
 @client.command()
 async def ath(ctx, symbol):
-    url = 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd'
-    data = requests.get(url).json()
+    data = requests.get(COINGECKO_COINS_MARKETS_URL).json()
     not_found = True
 
     for crypto in data:
