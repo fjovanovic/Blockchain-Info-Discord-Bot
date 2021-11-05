@@ -44,21 +44,19 @@ async def update_database():
         db[symbol] = current_price
         symbols.append(symbol)
 
-        #  print(symbol + ' ' + str(current_price) + ' ' + str(price_1h_ago) + ' ' + str(round(percentage, 2)))
+        # print(symbol + ' ' + str(current_price) + ' ' + str(price_1h_ago) + ' ' + str(round(percentage, 2)))
 
         if percentage > 10:
             positive = True
             text_positive += symbol + ' +' + str(round(percentage, 2)) + '%\n'
-
-        if percentage < -10:
+        elif percentage < -10:
             negative = True
             text_negative += symbol + ' ' + str(round(percentage, 2)) + '%\n'
 
     if positive:
         print(text_positive)
         await channel.send(text_positive)
-
-    if negative:
+    elif negative:
         print(text_negative)
         await channel.send(text_negative)
 
@@ -74,18 +72,14 @@ update_database.start()
 @client.command()
 async def price(ctx, symbol):
     data = requests.get(COINGECKO_COINS_MARKETS_URL).json()
-    not_found = True
 
     for crypto in data:
         if symbol.lower() == crypto['symbol']:
-            not_found = False
-            current_price = crypto['current_price']
-            #  print('Current price of {} is {:,}'.format(symbol.upper(), current_price))
-            await ctx.send('Current price of {} is {:,}'.format(symbol.upper(), current_price))
+            await ctx.send('Current price of {} is {:,}'.format(symbol.upper(), crypto['current_price']))
             return
-    if not_found:
-        await ctx.send('Either you sent wrong symbol or currency is not in top 100')
-        return
+
+    await ctx.send('Either you sent wrong symbol or currency is not in top 100')
+    return
 
 
 # Check the percentage of (bought price - current price): !bought symbol bought_price
@@ -99,73 +93,62 @@ async def bought(ctx, symbol, bought_price):
         return
 
     data = requests.get(COINGECKO_COINS_MARKETS_URL).json()
-    not_found = True
 
     for crypto in data:
         if symbol.lower() == crypto['symbol']:
-            not_found = False
-            current_price = crypto['current_price']
-            percentage = ((float(current_price) / float(bought_price_real)) - 1) * 100
+            percentage = ((float(crypto['current_price']) / float(bought_price_real)) - 1) * 100
             if percentage > 0:
-                # print('You are currently {:.2f}% in profit'.format(percentage))
                 await ctx.send('You are currently {:.2f}% in profit'.format(percentage))
                 return
             else:
-                # print('You are currently {:.2f}% in loss'.format(percentage))
                 await ctx.send('You are currently {:.2f}% in loss'.format(percentage))
                 return
-    if not_found:
-        await ctx.send('Either you sent wrong symbol or currency is not in top 100')
-        return
+
+    await ctx.send('Either you sent wrong symbol or currency is not in top 100')
+    return
 
 
 # 24h price change check: !daychange symbol
 @client.command()
 async def daychange(ctx, symbol):
     data = requests.get(COINGECKO_COINS_MARKETS_URL).json()
-    not_found = True
 
     for crypto in data:
         if symbol.lower() == crypto['symbol']:
-            not_found = False
             day_change = crypto['price_change_24h']
             day_change_percentage = crypto['price_change_percentage_24h']
-            # print('24h change for {} is {}, which is {}%'.format(symbol, day_change, day_change_percentage))
             if day_change < 0:
-                await ctx.send('24h change for {} is {}, which is {}%'.format(symbol, day_change, day_change_percentage))
+                await ctx.send('24h change for {} is {}, which is {}%'.
+                               format(symbol, day_change, day_change_percentage))
                 return
             else:
-                await ctx.send('24h change for {} is {}, which is +{}%'.format(symbol, day_change, day_change_percentage))
+                await ctx.send('24h change for {} is {}, which is +{}%'.
+                               format(symbol, day_change, day_change_percentage))
                 return
 
-    if not_found:
-        await ctx.send('Either you sent wrong symbol or currency is not in top 100')
-        return
+    await ctx.send('Either you sent wrong symbol or currency is not in top 100')
+    return
 
 
 # ATH check: !ath symbol
 @client.command()
 async def ath(ctx, symbol):
     data = requests.get(COINGECKO_COINS_MARKETS_URL).json()
-    not_found = True
 
     for crypto in data:
         if symbol.lower() == crypto['symbol']:
-            not_found = False
             ath = crypto['ath']
             ath_date = crypto['ath_date']
             day = ath_date[8] + ath_date[9]
             month = ath_date[5] + ath_date[6]
             year = ath_date[0] + ath_date[1] + ath_date[2] + ath_date[3]
             ath_percentage_down = crypto['ath_change_percentage']
-            # print('ATH for {} is at {:,}, on {}.{}.{}, which is {:.2f}% down'
-            # .format(symbol.upper(), ath, day, month, year, ath_percentage_down))
             await ctx.send('ATH for {} is at {:,}, on {}.{}.{}, which is {:.2f}% down'.
                            format(symbol.upper(), ath, day, month, year, ath_percentage_down))
             return
-    if not_found:
-        await ctx.send('Either you sent wrong symbol or currency is not in top 100')
-        return
+
+    await ctx.send('Either you sent wrong symbol or currency is not in top 100')
+    return
 
 
 TOKEN = os.environ['TOKEN_SECRET']
