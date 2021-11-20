@@ -370,6 +370,79 @@ async def ath(ctx, *args):
 	await ctx.send(embed=my_embed)
 
 
+# Shows top n coins by market cap n ∈ [0,50]
+@client.command()
+async def top(ctx, *args):
+	if len(args) != 1:
+		await ctx.send('Command !top is not used properly. (!top n)')
+		return
+	n = int(args[0])
+	if n < 1 or n > 50:
+		await ctx.send('Number of coins must be between 1 and 50. (!top n, n ∈ [0,50])')
+		return 
+
+	respond_symbols = ''
+	respond_prices = ''
+	respond_market_cap = ''
+
+	data = requests.get(COINGECKO_COINS_URL).json() 
+
+	i = 0
+	for crypto in data:
+		if i == n:
+			break
+		respond_symbols += str(crypto['symbol']).upper() + '\n'
+		respond_prices += '{:,}'.format(crypto['current_price']) + '\n'
+		respond_market_cap += '{:,}'.format(crypto['market_cap']) + '\n'
+		i += 1
+
+	today = date.today()
+	d2 = today.strftime("%B/%d/%Y")
+	now = datetime.now()
+	time_now = now.strftime("%H:%M:%S")
+	date_now = d2 + ' at ' + time_now
+
+	my_embed = discord.Embed(
+		title = 'More info',
+		url = 'https://www.coingecko.com/en',
+		colour = discord.Colour.purple()
+	)
+	my_embed.set_author(name='Top' + str(n) + ' coins', url='', icon_url='https://png.pngtree.com/png-clipart/20210310/original/pngtree-3d-trophy-with-first-second-third-winner-png-image_5931060.jpg')
+	my_embed.add_field(name='Symbol', value=respond_symbols, inline=True)
+	my_embed.add_field(name='Price', value=respond_prices, inline=True)
+	my_embed.add_field(name='Market cap', value=respond_market_cap, inline=True)
+	my_embed.set_footer(text='Source: coingecko.com ☛ ' + date_now)
+
+	await ctx.send(embed=my_embed)
+
+
+# Help command for commands and tasks
+@client.command()
+async def botinfo(ctx, *args):
+	if len(args) != 0:
+		await ctx.send('Command !botinfo is not used properly. (!botinfo)')
+		return
+
+	commands = '!price symbol\n!bought symbol price\n!daychange symbol\n!ath symbol\n!info symbol\n!top n'
+	examples = '!price btc\n!bought btc 21000\n!daychange btc\n!ath btc\n!info btc\n!top 10'
+	
+	today = date.today()
+	d2 = today.strftime("%B/%d/%Y")
+	now = datetime.now()
+	time_now = now.strftime("%H:%M:%S")
+	date_now = d2 + ' at ' + time_now
+
+	my_embed = discord.Embed(
+		colour = discord.Colour.purple()
+	)	
+	my_embed.set_author(name='Commands that i use', icon_url='https://e7.pngegg.com/pngimages/305/948/png-clipart-computer-icons-exclamation-mark-others-miscellaneous-angle-thumbnail.png')
+	my_embed.add_field(name='Command', value=commands, inline=True)
+	my_embed.add_field(name='Example', value=examples, inline=True)
+	my_embed.set_footer(text='Source: coingecko.com ☛ ' + date_now)
+
+	await ctx.send(embed=my_embed)
+
+
 TOKEN = os.environ['TOKEN_SECRET']
 keep_alive()
 client.run(TOKEN)
