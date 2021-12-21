@@ -364,7 +364,7 @@ async def ath(ctx, *args):
 	my_embed.set_author(name=name + '(' + symbol.upper() + ')', icon_url=image)
 	my_embed.add_field(name='ATH', value='{:,.2f}'.format(ath) + '$', inline=True)
 	my_embed.add_field(name='Date', value=month + '/' + day + '/' + year, inline=True)
-	my_embed.add_field(name='Down(%)', value='{:,.2f}'.format(ath_percentage_down), inline=True)
+	my_embed.add_field(name='Down(%)', value='{:,.2f}'.format(ath_percentage_down) + '%', inline=True)
 	my_embed.set_footer(text='Source: coingecko.com ☛ ' + date_now)
 
 	await ctx.send(embed=my_embed)
