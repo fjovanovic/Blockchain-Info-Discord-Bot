@@ -2,13 +2,23 @@ import os
 import discord
 from discord.ext import commands, tasks 
 import requests
-from keep_alive import keep_alive
-from replit import db
 from datetime import datetime
 from datetime import date
-from constants import PRICE_ALERTS_CHANNEL, COINGECKO_COINS_URL
+from constants import PRICE_ALERTS_CHANNEL, COINGECKO_ALLCOINS_URL, COINGECKO_COIN_DATA_URL, COINGECKO_COINS_PER_PAGE, COINGECKO_PRICE_CHANGE_LAST_HOUR
+from constants import MONTH_NAMES
+from errors import wrong_call_len, wrong_call
+
 
 client = commands.Bot(command_prefix='!')
+
+
+# Find coin_id('bitcoin') out of coin_symbol('btc')
+def find_id(url, coin_symbol):
+	data = requests.get(url).json()
+	for coin in data:
+		if coin['symbol'] == coin_symbol.lower() and 'binance-peg' not in coin['id']:
+			return coin['id']
+
 
 @client.event
 async def on_ready():
@@ -20,8 +30,8 @@ async def on_ready():
 async def last_hour_movers():
 	await client.wait_until_ready() # without this it won't work
 
-	data = requests.get(COINGECKO_COINS_URL).json()
-	symbols = []
+	data = requests.get(COINGECKO_PRICE_CHANGE_LAST_HOUR).json()
+	coin_symbols = []
 	response_positive = ''
 	positive = False
 	response_negative = ''
@@ -29,26 +39,16 @@ async def last_hour_movers():
 	channel = client.get_channel(PRICE_ALERTS_CHANNEL)
 	image = 'https://img.favpng.com/6/10/11/stock-market-bull-priceu2013earnings-ratio-wish-png-favpng-gXsPEtZiBZEULjz07u2j4k5v7.jpg'
 
-	for i in range(len(data)):
-		current_price = data[i]['current_price']
-		symbol = data[i]['symbol'].upper()
-
-		if symbol not in db.keys():
-			price_1h_ago = current_price
-			percentage = 0
-		else:
-			price_1h_ago = db[symbol]
-			percentage = ((float(current_price) / float(price_1h_ago))  - 1) * 100
-
-		db[symbol] = current_price
-		symbols.append(symbol)
-
-		if percentage > 10:
+	for crypto in data:
+		coin_symbol = crypto['symbol'].upper()
+		coin_symbols.append(coin_symbol)
+		coin_1h_change_percentage = crypto['price_change_percentage_1h_in_currency']
+		if coin_1h_change_percentage > 10:
 			positive = True
-			response_positive += symbol + ' +{:.2f}'.format(percentage) + '%\n'
-		elif percentage < -10:
+			response_positive += coin_symbol + ' +{:.2f}'.format(coin_1h_change_percentage) + '%\n'
+		elif coin_1h_change_percentage < -10:
 			negative = True
-			response_negative += symbol + ' {:.2f}'.format(percentage) + '%\n'
+			response_negative += coin_symbol + ' {:.2f}'.format(coin_1h_change_percentage) + '%\n'
 
 	if positive or negative:
 		today = date.today()
@@ -58,18 +58,22 @@ async def last_hour_movers():
 		date_now = d2 + ' at ' + time_now	
 
 		my_embed = discord.Embed(
-			colour = discord.Colour.purple()
+			colour = discord.Colour.blurple()
 		)
-		my_embed.set_author(name='Big market movers(+- 10%)', icon_url=image)
-		my_embed.add_field(name='Positive movers', value=response_positive, inline=True)
-		my_embed.add_field(name='Negative movers', value=response_negative, inline=True)
+		my_embed.set_author(name='Big market movers', icon_url=image)
+		if positive:
+			my_embed.add_field(name='Positive movers', value=response_positive, inline=True)
+		else:
+			my_embed.add_field(name='Positive movers', value='None', inline=True)
+		if negative:
+			my_embed.add_field(name='Negative movers', value=response_negative, inline=True)
+		else:
+			my_embed.add_field(name='Negative movers', value='None', inline=True)
 		my_embed.set_footer(text='Source: coingecko.com ☛ ' + date_now)
 
 		await channel.send(embed=my_embed)
 		
-	for key in db.keys():
-		if key not in symbols:
-			del db[key]
+	return
 
 
 last_hour_movers.start()
@@ -80,7 +84,7 @@ last_hour_movers.start()
 async def new_ath():
 	await client.wait_until_ready() # without this it won't work
 
-	data = requests.get(COINGECKO_COINS_URL).json()	
+	data = requests.get(COINGECKO_COINS_PER_PAGE).json()	
 	response = ''
 	found = False
 	channel = client.get_channel(PRICE_ALERTS_CHANNEL) 
@@ -112,55 +116,56 @@ async def new_ath():
 		date_now = d2 + ' at ' + time_now	
 
 		my_embed = discord.Embed(
-			colour = discord.Colour.purple()
+			colour = discord.Colour.blurple()
 		)
 		my_embed.set_author(name='New ATH', icon_url=image)
 		my_embed.add_field(name='Currencies', value=response, inline=True)
 		my_embed.set_footer(text='Source: coingecko.com ☛ ' + date_now)
 
 		await channel.send(embed=my_embed)
+	
+	return
 		
 
 new_ath.start()
 
 
+# Info about currency such as ath, price, price change.. :!info symbol
 @client.command(pass_context=True)
 async def info(ctx, *args):
 	if len(args) != 1:
-		await ctx.send('Command !info is not used properly. (!info symbol)')
+		my_embed = wrong_call_len(ctx, 'info symbol')
+		await ctx.send(embed=my_embed)
 		return
-	symbol = args[0]
-	data = requests.get(COINGECKO_COINS_URL).json()
-	not_found = True
-
-	for crypto in data:
-		if crypto['symbol'].lower() == symbol.lower():
-			id = crypto['id']
-			name = crypto['name']
-			image = crypto['image']
-			price = crypto['current_price']
-			market_cap = crypto['market_cap']
-			market_cap_rank = crypto['market_cap_rank']
-			price_change_24h = crypto['price_change_24h']
-			price_change_percentage = crypto['price_change_percentage_24h']
-			if float(price_change_24h) >= 0:
-				price_change_24h = '+{:,}'.format(price_change_24h)
-				price_change_percentage = '+{:,}'.format(price_change_percentage)
-			else:
-				price_change_24h = '{:,}'.format(price_change_24h)
-				price_change_percentage = '{:,}'.format(price_change_percentage)
-			ath = crypto['ath']
-			ath_date = crypto['ath_date']
-			ath_year = ath_date[0:4]
-			ath_month = ath_date[5:7]
-			ath_day = ath_date[8:10]
-			ath_real_date = ath_month + '/' + ath_day + '/' + ath_year
-			not_found = False
-			break
-
-	if not_found:
-		await ctx.send('Make sure that you entered correct symbol')
+	
+	coin_symbol = args[0].lower()
+	coin_id = find_id(COINGECKO_ALLCOINS_URL, coin_symbol)
+	if coin_id == None:
+		my_embed = wrong_call(ctx, 'make sure to provide us correct coin symbol.')
+		await ctx.send(embed=my_embed)
 		return
+
+	data = requests.get(COINGECKO_COIN_DATA_URL.replace('COIN_ID_REPLACE', coin_id)).json()
+
+	coin_name = data['name']
+	coin_image = data['image']['small']
+	coin_price = data['market_data']['current_price']['usd']
+	coin_market_cap = data['market_data']['market_cap']['usd']
+	coin_market_cap_rank = data['market_data']['market_cap_rank']
+	coin_price_change_24h = data['market_data']['price_change_24h']
+	coin_price_change_percentage_24h = data['market_data']['price_change_percentage_24h']
+	if float(coin_price_change_24h) >= 0:
+		coin_price_change_24h = '+{:,}'.format(coin_price_change_24h)
+		coin_price_change_percentage_24h = '+{:,}'.format(coin_price_change_percentage_24h)
+	else:
+		coin_price_change_24h = '{:,}'.format(coin_price_change_24h)
+		coin_price_change_percentage_24h = '{:,}'.format(coin_price_change_percentage_24h)
+	coin_ath = data['market_data']['ath']['usd']
+	coin_ath_date = data['market_data']['ath_date']['aed']
+	coin_ath_year = coin_ath_date[0:4]
+	coin_ath_month = MONTH_NAMES[int(coin_ath_date[5:7]) - 1]
+	coin_ath_day = coin_ath_date[8:10]
+	coin_ath_real_date = coin_ath_month + '/' + coin_ath_day + '/' + coin_ath_year
 
 	today = date.today()
 	d2 = today.strftime("%B/%d/%Y")
@@ -170,41 +175,41 @@ async def info(ctx, *args):
 	
 	my_embed = discord.Embed(
 		title = 'More info',
-		url = 'https://www.coingecko.com/en/coins/' + id,
-		colour = discord.Colour.purple() 
+		url = 'https://www.coingecko.com/en/coins/' + coin_id,
+		colour = discord.Colour.blurple() 
 	)
-	my_embed.set_author(name=name + '(' + symbol.upper() + ')', icon_url=image)
-	my_embed.add_field(name='Price', value='{:,}$'.format(price), inline=True)
-	my_embed.add_field(name='Market cap', value='#' + str(market_cap_rank) + '\n{:,}'.format(market_cap), inline=True)
-	my_embed.add_field(name='ATH', value='{:,}'.format(ath) + '\n' + ath_real_date + '\n' + str(ath_date[11:16]), inline=True)
-	my_embed.add_field(name='Change(24h)', value=price_change_24h + '$', inline=True)
-	my_embed.add_field(name='Change(24h)', value=price_change_percentage + '%', inline=True)
-	my_embed.set_image(url='https://cdn.wallpapersafari.com/71/88/InUZKu.png')
+	my_embed.set_author(name=coin_name + '(' + coin_symbol.upper() + ')', icon_url=coin_image)
+	my_embed.add_field(name='Price', value='{:,}$'.format(coin_price), inline=True)
+	my_embed.add_field(name='Market cap', value='#' + str(coin_market_cap_rank) + '\n{:,}'.format(coin_market_cap), inline=True)
+	my_embed.add_field(name='ATH', value='{:,}'.format(coin_ath) + '\n' + coin_ath_real_date + '\n' + str(coin_ath_date[11:16]), inline=True)
+	my_embed.add_field(name='Change(24h)', value=coin_price_change_24h + '$', inline=True)
+	my_embed.add_field(name='Change(24h)', value=coin_price_change_percentage_24h + '%', inline=True)
 	my_embed.set_footer(text='Source: coingecko.com ☛ ' + date_now)
 
 	await ctx.send(embed=my_embed)
+	return
 
 
 # Check the price of symbol: !check symbol
 @client.command()
 async def price(ctx, *args):
 	if len(args) != 1:
-		await ctx.send('Command !price is not used properly. (!price symbol)')
+		my_embed = wrong_call_len(ctx, 'price symbol')
+		await ctx.send(embed=my_embed)
 		return
-	symbol = args[0]
-	data = requests.get(COINGECKO_COINS_URL).json()
-	not_found = True
 
-	for crypto in data:
-		if crypto['symbol'].lower() == symbol.lower():
-			name = crypto['name']
-			image = crypto['image']
-			price = crypto['current_price']
-			not_found = False
-			break
-	if not_found:
-		await ctx.send('Either you sent wrong symbol or currency is not in top 100')
+	coin_symbol = args[0].lower()
+	coin_id = find_id(COINGECKO_ALLCOINS_URL, coin_symbol)
+	if coin_id == None:
+		my_embed = wrong_call(ctx, 'make sure to provide us correct coin symbol.')
+		await ctx.send(embed=my_embed)
 		return
+
+	data = requests.get(COINGECKO_COIN_DATA_URL.replace('COIN_ID_REPLACE', coin_id)).json()
+	
+	coin_name = data['name']
+	coin_image = data['image']['small']
+	coin_price = data['market_data']['current_price']['usd']
 
 	today = date.today()
 	d2 = today.strftime("%B/%d/%Y")
@@ -213,10 +218,10 @@ async def price(ctx, *args):
 	date_now = d2 + ' at ' + time_now	
 	
 	my_embed = discord.Embed(
-		colour = discord.Colour.purple() 
+		colour = discord.Colour.blurple()
 	)
-	my_embed.set_author(name=name + '(' + symbol.upper() + ')', icon_url=image)
-	my_embed.add_field(name='Price', value='{:,}$'.format(price), inline=True)
+	my_embed.set_author(name=coin_name + '(' + coin_symbol.upper() + ')', icon_url=coin_image)
+	my_embed.add_field(name='Price', value='{:,}$'.format(coin_price), inline=True)
 	my_embed.set_footer(text='Source: coingecko.com ☛ ' + date_now)
 
 	await ctx.send(embed=my_embed)
@@ -226,33 +231,38 @@ async def price(ctx, *args):
 @client.command()
 async def bought(ctx, *args):
 	if len(args) != 2:
-		await ctx.send('Command !bought is not used properly. (!bought symbol bought_price)')
-		return
-	symbol = args[0]
-	bought_price = args[1].replace(',','.')
-
-	if float(bought_price) < 0:
-		await ctx.send('Price is not correct, please send us correct price')
+		my_embed = wrong_call_len(ctx, 'bought symbol price')
+		await ctx.send(embed=my_embed)
 		return
 
-	data = requests.get(COINGECKO_COINS_URL).json()
-	not_found = True
-
-	for crypto in data:
-		if crypto['symbol'].lower() == symbol.lower():
-			name = crypto['name']
-			image = crypto['image']
-			current_price = crypto['current_price']
-			percentage = ((float(current_price) / float(bought_price))  - 1) * 100
-			if percentage > 0:
-				response = '+{:,.2f}%'.format(percentage)
-			else:
-				response = '{:,.2f}%'.format(percentage)
-			not_found = False
-			break
-	if not_found:
-		await ctx.send('Either you sent wrong symbol or currency is not in top 100')
+	coin_symbol = args[0].lower()
+	try:
+		bought_price = float(args[1].replace(',','.'))
+		if bought_price <= 0:
+			my_embed = wrong_call(ctx, 'make sure to provide us correct price.')
+			await ctx.send(embed=my_embed)
+			return
+	except:
+		my_embed = wrong_call(ctx, 'make sure to use the right call. (**!bought symbol price**)')
+		await ctx.send(embed=my_embed)
 		return
+
+	coin_id = find_id(COINGECKO_ALLCOINS_URL, coin_symbol)
+	if coin_id == None:
+		my_embed = wrong_call(ctx, 'make sure to provide us correct symbol.')
+		await ctx.send(embed=my_embed)
+		return
+
+	data = requests.get(COINGECKO_COIN_DATA_URL.replace('COIN_ID_REPLACE', coin_id)).json()
+
+	coin_name = data['name']
+	coin_image = data['image']['small']
+	coin_current_price = data['market_data']['current_price']['usd']
+	coin_percentage = ((float(coin_current_price) / float(bought_price))  - 1) * 100
+	if coin_percentage > 0:
+		response = '+{:,.2f}%'.format(coin_percentage)
+	else:
+		response = '{:,.2f}%'.format(coin_percentage)
 
 	today = date.today()
 	d2 = today.strftime("%B/%d/%Y")
@@ -261,10 +271,10 @@ async def bought(ctx, *args):
 	date_now = d2 + ' at ' + time_now	
 	
 	my_embed = discord.Embed(
-		colour = discord.Colour.purple() 
+		colour = discord.Colour.blurple() 
 	)
-	my_embed.set_author(name=name + '(' + symbol.upper() + ')', icon_url=image)
-	if percentage > 0:
+	my_embed.set_author(name=coin_name + '(' + coin_symbol.upper() + ')', icon_url=coin_image)
+	if coin_percentage > 0:
 		my_embed.add_field(name='Current profit', value=response, inline=True)
 		my_embed.colour = discord.Colour.green()
 	else:
@@ -273,35 +283,36 @@ async def bought(ctx, *args):
 	my_embed.set_footer(text='Source: coingecko.com ☛ ' + date_now)
 
 	await ctx.send(embed=my_embed)	
+	return
 
 
 # 24h price change check: !daychange symbol
 @client.command()
 async def daychange(ctx, *args):
 	if len(args) != 1:
-		await ctx.send('Command !daychange is not used properly. (!daychange symbol)')
+		my_embed = wrong_call_len(ctx, 'daychange symbol')
+		await ctx.send(embed=my_embed)
 		return
-	symbol = args[0]
-	data = requests.get(COINGECKO_COINS_URL).json()
-	not_found = True
 
-	for crypto in data:
-		if crypto['symbol'].lower() == symbol.lower():
-			name = crypto['name']
-			image = crypto['image']
-			day_change = crypto['price_change_24h']
-			day_change_percentage = crypto['price_change_percentage_24h']
-			if day_change > 0:
-				response_price = '+{:,.2f}$'.format(day_change)
-				response_percentage = '+{:,.2f}%'.format(day_change_percentage)
-			else:
-				response_price = '{:,.2f}$'.format(day_change)
-				response_percentage = '{:,.2f}%'.format(day_change_percentage)
-			not_found = False
-			break
-	if not_found:
-		await ctx.send('Either you sent wrong symbol or currency is not in top 100')
+	coin_symbol = args[0].lower()
+	coin_id = find_id(COINGECKO_ALLCOINS_URL, coin_symbol)
+	if coin_id == None:
+		my_embed = wrong_call(ctx, 'make sure to provide us correct symbol.')
+		await ctx.send(embed=my_embed)
 		return
+
+	data = requests.get(COINGECKO_COIN_DATA_URL.replace('COIN_ID_REPLACE', coin_id)).json()
+
+	coin_name = data['name']
+	coin_image = data['image']['small']
+	coin_day_change = data['market_data']['price_change_24h']
+	coin_day_change_percentage = data['market_data']['price_change_percentage_24h']
+	if coin_day_change > 0:
+		response_price = '+{:,.2f}$'.format(coin_day_change)
+		response_percentage = '+{:,.2f}%'.format(coin_day_change_percentage)
+	else:
+		response_price = '{:,.2f}$'.format(coin_day_change)
+		response_percentage = '{:,.2f}%'.format(coin_day_change_percentage)
 
 	today = date.today()
 	d2 = today.strftime("%B/%d/%Y")
@@ -310,10 +321,10 @@ async def daychange(ctx, *args):
 	date_now = d2 + ' at ' + time_now	
 	
 	my_embed = discord.Embed(
-		colour = discord.Colour.purple() 
+		colour = discord.Colour.blurple() 
 	)
-	my_embed.set_author(name=name + '(' + symbol.upper() + ')', icon_url=image)
-	if day_change > 0:
+	my_embed.set_author(name=coin_name + '(' + coin_symbol.upper() + ')', icon_url=coin_image)
+	if coin_day_change > 0:
 		my_embed.add_field(name='Change(24h)', value=response_price, inline=True)
 		my_embed.add_field(name='Change(24h)', value=response_percentage, inline=True)
 		my_embed.colour = discord.Colour.green()
@@ -324,33 +335,34 @@ async def daychange(ctx, *args):
 	my_embed.set_footer(text='Source: coingecko.com ☛ ' + date_now)
 
 	await ctx.send(embed=my_embed)
+	return
 
 
 # ATH check: !ath symbol
 @client.command()
 async def ath(ctx, *args):
 	if len(args) != 1:
-		await ctx.send('Command !ath is not used properly. (!ath symbol)')
+		my_embed = wrong_call_len(ctx, 'ath symbol')
+		await ctx.send(embed=my_embed)
 		return
-	symbol = args[0]
-	data = requests.get(COINGECKO_COINS_URL).json()
-	not_found = True
-	
-	for crypto in data:
-		if crypto['symbol'].lower() == symbol.lower():
-			name = crypto['name']
-			image = crypto['image']
-			ath = crypto['ath']
-			ath_date = crypto['ath_date']
-			day = ath_date[8:10]
-			month = ath_date[5:7]
-			year = ath_date[0:4]
-			ath_percentage_down = crypto['ath_change_percentage']
-			not_found = False
-			break
-	if not_found:
-		await ctx.send('Either you sent wrong symbol or currency is not in top 100')
+
+	coin_symbol = args[0].lower()
+	coin_id = find_id(COINGECKO_ALLCOINS_URL, coin_symbol)
+	if coin_id == None:	
+		my_embed = wrong_call(ctx, 'make sure to provide us correct symbol.')
+		await ctx.send(embed=my_embed)
 		return
+
+	data = requests.get(COINGECKO_COIN_DATA_URL.replace('COIN_ID_REPLACE', coin_id)).json()
+
+	coin_name = data['name']
+	coin_image = data['image']['small']
+	coin_ath = data['market_data']['ath']['usd']
+	coin_ath_date = data['market_data']['ath_date']['aed']
+	day = coin_ath_date[8:10]
+	month = MONTH_NAMES[int(coin_ath_date[5:7]) - 1]
+	year = coin_ath_date[0:4]
+	coin_ath_percentage_down = data['market_data']['ath_change_percentage']['usd']
 
 	today = date.today()
 	d2 = today.strftime("%B/%d/%Y")
@@ -359,33 +371,41 @@ async def ath(ctx, *args):
 	date_now = d2 + ' at ' + time_now	
 	
 	my_embed = discord.Embed(
-		colour = discord.Colour.purple() 
+		colour = discord.Colour.blurple() 
 	)
-	my_embed.set_author(name=name + '(' + symbol.upper() + ')', icon_url=image)
-	my_embed.add_field(name='ATH', value='{:,.2f}'.format(ath) + '$', inline=True)
+	my_embed.set_author(name=coin_name + '(' + coin_symbol.upper() + ')', icon_url=coin_image)
+	my_embed.add_field(name='ATH', value='{:,.2f}'.format(coin_ath) + '$', inline=True)
 	my_embed.add_field(name='Date', value=month + '/' + day + '/' + year, inline=True)
-	my_embed.add_field(name='Down(%)', value='{:,.2f}'.format(ath_percentage_down) + '%', inline=True)
+	my_embed.add_field(name='Down(%)', value='{:,.2f}'.format(coin_ath_percentage_down) + '%', inline=True)
 	my_embed.set_footer(text='Source: coingecko.com ☛ ' + date_now)
 
 	await ctx.send(embed=my_embed)
+	return
 
 
 # Shows top n coins by market cap n ∈ [0,50]
 @client.command()
 async def top(ctx, *args):
 	if len(args) != 1:
-		await ctx.send('Command !top is not used properly. (!top n)')
+		my_embed = wrong_call_len(ctx, 'top n')
+		await ctx.send(embed=my_embed)
 		return
-	n = int(args[0])
-	if n < 1 or n > 50:
-		await ctx.send('Number of coins must be between 1 and 50. (!top n, n ∈ [0,50])')
-		return 
+	try:
+		n = int(args[0])
+		if n < 1 or n > 50:
+			my_embed = wrong_call(ctx, 'make sure to provide us correct number (0-50).')
+			await ctx.send(embed=my_embed)
+			return 
+	except:
+		my_embed = wrong_call(ctx, 'top n')
+		await ctx.send(embed=my_embed)
+		return
 
 	respond_symbols = ''
 	respond_prices = ''
 	respond_market_cap = ''
 
-	data = requests.get(COINGECKO_COINS_URL).json() 
+	data = requests.get(COINGECKO_COINS_PER_PAGE).json() 
 
 	i = 0
 	for crypto in data:
@@ -405,7 +425,7 @@ async def top(ctx, *args):
 	my_embed = discord.Embed(
 		title = 'More info',
 		url = 'https://www.coingecko.com/en',
-		colour = discord.Colour.purple()
+		colour = discord.Colour.blurple()
 	)
 	my_embed.set_author(name='Top' + str(n) + ' coins', url='', icon_url='https://png.pngtree.com/png-clipart/20210310/original/pngtree-3d-trophy-with-first-second-third-winner-png-image_5931060.jpg')
 	my_embed.add_field(name='Symbol', value=respond_symbols, inline=True)
@@ -414,13 +434,15 @@ async def top(ctx, *args):
 	my_embed.set_footer(text='Source: coingecko.com ☛ ' + date_now)
 
 	await ctx.send(embed=my_embed)
+	return
 
 
 # Help command for commands and tasks
 @client.command()
 async def botinfo(ctx, *args):
 	if len(args) != 0:
-		await ctx.send('Command !botinfo is not used properly. (!botinfo)')
+		my_embed = wrong_call_len(ctx, 'botinfo')
+		await ctx.send('botinfo')
 		return
 
 	commands = '!price symbol\n!bought symbol price\n!daychange symbol\n!ath symbol\n!info symbol\n!top n'
@@ -433,16 +455,16 @@ async def botinfo(ctx, *args):
 	date_now = d2 + ' at ' + time_now
 
 	my_embed = discord.Embed(
-		colour = discord.Colour.purple()
+		colour = discord.Colour.blurple()
 	)	
-	my_embed.set_author(name='Commands that i use', icon_url='https://e7.pngegg.com/pngimages/305/948/png-clipart-computer-icons-exclamation-mark-others-miscellaneous-angle-thumbnail.png')
+	my_embed.set_author(name='Commands', icon_url='https://e7.pngegg.com/pngimages/305/948/png-clipart-computer-icons-exclamation-mark-others-miscellaneous-angle-thumbnail.png')
 	my_embed.add_field(name='Command', value=commands, inline=True)
 	my_embed.add_field(name='Example', value=examples, inline=True)
 	my_embed.set_footer(text='Source: coingecko.com ☛ ' + date_now)
 
 	await ctx.send(embed=my_embed)
+	return
 
 
 TOKEN = os.environ['TOKEN_SECRET']
-keep_alive()
 client.run(TOKEN)

@@ -4,7 +4,8 @@
 !daychange symbol 				- Percentage of day change of currency
 !ath symbol 					- All Time High of currency
 !info symbol                    - Small info about currency (price, marketcap, ath, etc)
+!top n                          - List of top n coins (0-50)
 
 -- Tasks --
-last_hour_movers                - Checks the prices every hour to see the big market movers(+- 10%)
+last_hour_movers()               - Checks the prices every hour to see the big market movers(+- 10%)
 new_ath()    				    - Checks for new ATH currencies every 30min
