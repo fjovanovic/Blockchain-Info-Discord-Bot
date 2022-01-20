@@ -7,6 +7,7 @@ from datetime import date
 from constants import PRICE_ALERTS_CHANNEL, COINGECKO_ALLCOINS_URL, COINGECKO_COIN_DATA_URL, COINGECKO_COINS_PER_PAGE, COINGECKO_PRICE_CHANGE_LAST_HOUR
 from constants import MONTH_NAMES
 from errors import wrong_call_len, wrong_call
+from keep_alive import keep_alive
 
 
 client = commands.Bot(command_prefix='!')
@@ -467,4 +468,5 @@ async def botinfo(ctx, *args):
 
 
 TOKEN = os.environ['TOKEN_SECRET']
+keep_alive()
 client.run(TOKEN)
