@@ -4,11 +4,13 @@ from discord.ext import commands, tasks
 import requests
 from datetime import datetime
 from datetime import date
-from constants import PRICE_ALERTS_CHANNEL, COINGECKO_ALLCOINS_URL, COINGECKO_COIN_DATA_URL, COINGECKO_COINS_PER_PAGE, COINGECKO_PRICE_CHANGE_LAST_HOUR
-from constants import MONTH_NAMES
-from errors import wrong_call_len, wrong_call
-from keep_alive import keep_alive
 
+from dotenv import load_dotenv
+
+from constants import *
+import functions
+
+load_dotenv()
 
 client = commands.Bot(command_prefix='!')
 
@@ -195,7 +197,7 @@ async def info(ctx, *args):
 @client.command()
 async def price(ctx, *args):
 	if len(args) != 1:
-		my_embed = wrong_call_len(ctx, 'price symbol')
+		my_embed = functions.wrong_call_len(ctx, 'price symbol')
 		await ctx.send(embed=my_embed)
 		return
 
@@ -467,6 +469,5 @@ async def botinfo(ctx, *args):
 	return
 
 
-TOKEN = os.environ['TOKEN_SECRET']
-keep_alive()
+TOKEN = os.environ.get('TOKEN')
 client.run(TOKEN)
