@@ -1,11 +1,12 @@
 -- Commands --
-!price symbol 					- Current price of currency
-!bought symbol bought_price 	- Percentage of loss / profit since you bought currency
-!daychange symbol 				- Percentage of day change of currency
-!ath symbol 					- All Time High of currency
-!info symbol                    - Small info about currency (price, marketcap, ath, etc)
-!top n                          - List of top n coins (0-50)
+price symbol 				   - Current price of currency
+bought symbol bought_price 	   - Percentage of loss / profit since you bought currency
+daychange symbol 			   - Percentage of day change of currency
+ath symbol 					   - All Time High of currency
+info symbol                    - Small info about currency (price, marketcap, ath, etc)
+top n                          - List of top n coins (0-50)
 
 -- Tasks --
-last_hour_movers()               - Checks the prices every hour to see the big market movers(+- 10%)
-new_ath()    				    - Checks for new ATH currencies every 30min
+last_hour_movers()             - Check the prices every hour to see the big market movers(+- 10%)
+new_ath()    				   - Check for new ATH currencies every 30min
+binance_movers_check()         - Check if there are quicker movers every 4 seconds

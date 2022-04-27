@@ -1,23 +1,39 @@
-import discord
+from discord import Embed, Colour
+from json import load
 
 
-def wrong_call_len(ctx, error_message):
+async def wrong_call(ctx, error_message):
     user_id = ctx.author.id
     user_mention = f'<@{user_id}>'
-    my_embed = discord.Embed(
-        colour = discord.Colour.red()
+    
+    my_embed = Embed(
+        colour = Colour.red()
     )
 
-    my_embed.add_field(name='⛔Wrong call', value=user_mention + ', make sure to use the right call. (**!' + error_message + '**)')
-    return my_embed   
+    my_embed.add_field(name='⛔Wrong call', value=f'{user_mention}, make sure to use the right call. (**${error_message}**)')
+
+    await ctx.send(embed=my_embed)
+    return  
 
 
-def wrong_call(ctx, error_message):
+async def error(ctx, error_name, error_message):
     user_id = ctx.author.id
     user_mention = f'<@{user_id}>'
-    my_embed = discord.Embed(
-        colour = discord.Colour.red()
+    
+    my_embed = Embed(
+        colour = Colour.red()
     )
 
-    my_embed.add_field(name='⛔Wrong call', value=user_mention + ', ' + error_message)
-    return my_embed   
+    my_embed.add_field(name=f'⛔{error_name}', value=f'{user_mention}, {error_message}')
+
+    await ctx.send(embed=my_embed)
+    return  
+
+
+def find_id(coin_symbol):
+    with open('coingecko\\all_coins.json', 'r') as f:
+        data = load(f)
+        for coin in data:
+            if coin['symbol'] == coin_symbol.lower() and 'binance-peg' not in coin['id']:
+                return coin['id']
+    return None
