@@ -1,4 +1,4 @@
-from os import environ
+import os
 import discord
 from discord.ext import commands, tasks 
 from requests import get
@@ -119,73 +119,9 @@ async def new_ath():
 		await channel.send(embed=my_embed)
 	
 	return
-		
+
 
 new_ath.start()
-
-
-# If there is more than 300$ movement on BTC in past 4 sec * 5 = 20 sec,
-# then the bot will send BTC, ETH and DOT price at the moment,
-# with possibility of the same movement on alt coins
-btc_prices = []
-eth_prices = []
-dot_prices = []
-
-
-@tasks.loop(seconds=4)
-async def binance_movers_check():
-	if not client.is_ready():
-		return
-
-	channel = client.get_channel(BINANCE_PRICE_ALERTS_CHANNEL) 
-
-	try:
-		data = get(BINANCE_PRICE_ALL_COINS).json()	
-	except:
-		await functions.error(channel, 'URL problem', 'we have a problem with fetching the data from binance, try again later')
-		return
-
-	for coin in data:
-		if 'USDT' in coin['symbol']:
-			if coin['symbol'] == 'BTCUSDT':
-				for price in btc_prices:
-					if abs(float(coin['price']) - price) > 300:
-						date_now = dt.datetime.utcnow().strftime('%d-%b-%Y %H:%M UTC')	
-
-						my_embed = discord.Embed(
-							colour = discord.Colour.blurple()
-						)
-
-						my_embed.set_author(name='BTC Movement Alert', icon_url=LAST_HOUR_MOVERS_IMAGE)
-						my_embed.add_field(name='Potential buy / sell', value=f'‎\nBTC: {btc_prices[-1]}\n\nETH: {eth_prices[-1]}\n\nDOT: {dot_prices[-1]}', inline=True)
-						my_embed.set_footer(text=f'Source: binance.com ☛ {date_now}')
-
-						await channel.send(embed=my_embed)
-						btc_prices.clear()
-						eth_prices.clear()
-						dot_prices.clear()
-				if len(btc_prices) == 5:
-					btc_prices.pop(0)
-					btc_prices.append(float(coin['price']))
-				else:
-					btc_prices.append(float(coin['price']))
-			elif coin['symbol'] == 'ETHUSDT':
-				if len(eth_prices) == 5:
-					eth_prices.pop(0)
-					eth_prices.append(float(coin['price']))
-				else:
-					eth_prices.append(float(coin['price']))
-			elif coin['symbol'] == 'DOTUSDT':
-				if len(dot_prices) == 5:
-					dot_prices.pop(0)
-					dot_prices.append(float(coin['price']))
-				else:
-					dot_prices.append(float(coin['price']))
-
-	return
-
-
-binance_movers_check.start()
 
 
 # Some info about the provided coin, ath, price, etc.
@@ -320,17 +256,15 @@ async def bought(ctx, *args):
 	else:
 		response = f'{coin_percentage:,.2f}%'
 
-	date_now = dt.datetime.utcnow().strftime('%d-%b-%Y %H:%M UTC')		
+	date_now = dt.datetime.utcnow().strftime('%d-%b-%Y %H:%M UTC')
+	current_position = 'Current profit' if coin_percentage >= 0 else 'Current loss'
 	
 	my_embed = discord.Embed(
 		colour = discord.Colour.red() if coin_percentage < 0 else discord.Colour.green()
 	)
 
 	my_embed.set_author(name=f'{coin_name}({coin_symbol.upper()})', icon_url=coin_image)
-	if coin_percentage > 0:
-		my_embed.add_field(name='Current profit', value=response, inline=True)
-	else:
-		my_embed.add_field(name='Current loss', value=response, inline=True)
+	my_embed.add_field(name=current_position, value=response, inline=True)
 	my_embed.set_footer(text=f'Source: coingecko.com ☛ {date_now}')
 
 	await ctx.send(embed=my_embed)	
@@ -470,7 +404,7 @@ async def top(ctx, *args):
 		url = 'https://www.coingecko.com/en',
 		colour = discord.Colour.blurple()
 	)
-	my_embed.set_author(name=f'Top{n} coins', url='https://coingecko.com', icon_url='https://png.pngtree.com/png-clipart/20210310/original/pngtree-3d-trophy-with-first-second-third-winner-png-image_5931060.jpg')
+	my_embed.set_author(name=f'Top{n} coins', url='https://coingecko.com', icon_url=TOP_N_COINS_IMAGE)
 	my_embed.add_field(name='Symbol', value=respond_symbols, inline=True)
 	my_embed.add_field(name='Price', value=respond_prices, inline=True)
 	my_embed.add_field(name='Market cap', value=respond_market_cap, inline=True)
@@ -495,7 +429,7 @@ async def botinfo(ctx, *args):
 	my_embed = discord.Embed(
 		colour = discord.Colour.blurple()
 	)	
-	my_embed.set_author(name='Commands', icon_url='https://e7.pngegg.com/pngimages/305/948/png-clipart-computer-icons-exclamation-mark-others-miscellaneous-angle-thumbnail.png')
+	my_embed.set_author(name='Commands', icon_url=INFO_IMAGE)
 	my_embed.add_field(name='Command', value=commands, inline=True)
 	my_embed.add_field(name='Example', value=examples, inline=True)
 	my_embed.set_footer(text=f'Source: coingecko.com ☛ {date_now}')
@@ -504,5 +438,5 @@ async def botinfo(ctx, *args):
 	return
 
 
-TOKEN = environ.get('TOKEN')
+TOKEN = os.getenv('TOKEN')
 client.run(TOKEN)
