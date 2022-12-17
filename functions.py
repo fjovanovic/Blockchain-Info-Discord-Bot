@@ -3,8 +3,7 @@ from json import load
 
 
 async def wrong_call(ctx, error_message):
-    user_id = ctx.author.id
-    user_mention = f'<@{user_id}>'
+    user_mention = ctx.author.mention
     
     my_embed = Embed(
         colour = Colour.red()
@@ -17,8 +16,7 @@ async def wrong_call(ctx, error_message):
 
 
 async def error(ctx, error_name, error_message):
-    user_id = ctx.author.id
-    user_mention = f'<@{user_id}>'
+    user_mention = ctx.author.mention
     
     my_embed = Embed(
         colour = Colour.red()
@@ -31,7 +29,7 @@ async def error(ctx, error_name, error_message):
 
 
 def find_id(coin_symbol):
-    with open('coingecko\\all_coins.json', 'r') as f:
+    with open('coingecko/all_coins.json', 'r') as f:
         data = load(f)
         for coin in data:
             if coin['symbol'] == coin_symbol.lower() and 'binance-peg' not in coin['id']:
