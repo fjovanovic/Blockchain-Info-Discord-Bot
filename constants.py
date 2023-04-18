@@ -9,5 +9,4 @@ LAST_HOUR_MOVERS_IMAGE = 'https://img.favpng.com/6/10/11/stock-market-bull-price
 INFO_IMAGE = 'https://e7.pngegg.com/pngimages/305/948/png-clipart-computer-icons-exclamation-mark-others-miscellaneous-angle-thumbnail.png'
 TOP_N_COINS_IMAGE = 'https://png.pngtree.com/png-clipart/20210310/original/pngtree-3d-trophy-with-first-second-third-winner-png-image_5931060.jpg'
 
-PRICE_ALERTS_CHANNEL = 901822736693870623
-BINANCE_PRICE_ALERTS_CHANNEL = 965347430826664036
+COIN_EXAMPLES = ['BTC', 'ETH', 'BNB', 'XRP', 'ADA', 'MATIC', 'SOL', 'DOT']
