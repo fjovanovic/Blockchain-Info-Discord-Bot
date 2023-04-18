@@ -41,6 +41,10 @@ class Info(Cog):
                 session, 
                 COINGECKO_COIN_DATA_URL.replace('COIN_ID_REPLACE', coin_id)
             )
+        
+        if data is None:
+            await errors.coin_not_found(interaction)
+            return
 
         coin_name = data['name']
         coin_image = data['image']['small']
