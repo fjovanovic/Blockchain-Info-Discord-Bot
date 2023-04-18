@@ -16,7 +16,7 @@ class PriceChange(Cog):
         self.bot = bot
 	
 
-    @app_commands.command(name='price_change', description='24 hours percentage change')
+    @app_commands.command(name='price_change', description='Price change over the period of time')
     @app_commands.describe(
         coin_symbol='Coin symbol'
     )
@@ -75,13 +75,11 @@ class PriceChange(Cog):
         else:
             response_30d_percentage = f'`{coin_30d_change_percentage:,.2f}%`'
 
-        timestamp_now = dt.datetime.now()		
-        
         my_embed = Embed(
-            title = 'More info',
-            url = f'https://www.coingecko.com/en/coins/{coin_id}',
-            colour = Colour.red() if coin_day_change < 0 else Colour.green(),
-            timestamp=timestamp_now
+            title='More info',
+            url=f'https://www.coingecko.com/en/coins/{coin_id}',
+            colour=Colour.red() if coin_day_change < 0 else Colour.green(),
+            timestamp=dt.datetime.now()
         )
 
         my_embed.set_author(name=f'{coin_name}({coin_symbol.upper()})', icon_url=coin_image)
