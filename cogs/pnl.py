@@ -59,24 +59,23 @@ class PNL(Cog):
         coin_current_price = float(data['market_data']['current_price']['usd'])
         coin_percentage = (coin_current_price - price) / price * 100
         if coin_percentage > 0 and position_type == 'buy':
-            response = f'+{coin_percentage:,.2f}%'
+            response = f'`+{coin_percentage:,.2f}%`'
         elif coin_percentage < 0 and position_type == 'sell':
             coin_percentage = abs(coin_percentage)
-            response = f'+{coin_percentage:,.2f}%'
+            response = f'`+{coin_percentage:,.2f}%`'
         elif coin_percentage > 0 and position_type == 'sell':
             coin_percentage = -coin_percentage
-            response = f'{coin_percentage:,.2f}%'
+            response = f'`{coin_percentage:,.2f}%`'
         else:
-            response = f'{coin_percentage:,.2f}%'
+            response = f'`{coin_percentage:,.2f}%`'
 
         current_position = 'Current profit' if coin_percentage >= 0 else 'Current loss'
-        timestamp_now = dt.datetime.now()
         
         my_embed = Embed(
-            title = 'More info',
-            url = f'https://www.coingecko.com/en/coins/{coin_id}',
-            colour = Colour.red() if coin_percentage < 0 else Colour.green(),
-            timestamp=timestamp_now
+            title='More info',
+            url=f'https://www.coingecko.com/en/coins/{coin_id}',
+            colour=Colour.red() if coin_percentage < 0 else Colour.green(),
+            timestamp=dt.datetime.now()
         )
 
         my_embed.set_author(name=f'{coin_name}({coin_symbol.upper()})', icon_url=coin_image)

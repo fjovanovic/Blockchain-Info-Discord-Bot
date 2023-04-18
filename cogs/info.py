@@ -69,21 +69,19 @@ class Info(Cog):
             int(coin_ath_date[14:16])
         ).strftime('%d-%b-%Y %H:%M')
 
-        timestamp_now = dt.datetime.now()
-
         my_embed = Embed(
-            title = 'More info',
-            url = f'https://www.coingecko.com/en/coins/{coin_symbol}',
-            colour = Colour.blue(),
-            timestamp=timestamp_now
+            title='More info',
+            url=f'https://www.coingecko.com/en/coins/{coin_symbol}',
+            colour=Colour.blue(),
+            timestamp=dt.datetime.now()
         )
 
         my_embed.set_author(name=f'{coin_name}({coin_symbol.upper()})', icon_url=coin_image)
-        my_embed.add_field(name='Price', value=f'{coin_price:,}$', inline=True)
-        my_embed.add_field(name='Market cap', value=f'#{coin_market_cap_rank}\n{coin_market_cap:,}', inline=True)
-        my_embed.add_field(name='ATH', value=f'{coin_ath:,}\n{coin_ath_real_date}', inline=True)
-        my_embed.add_field(name='Change(24h $)', value=f'{coin_price_change_24h}$', inline=True)
-        my_embed.add_field(name='Change(24h %)', value=f'{coin_price_change_percentage_24h}%', inline=True)
+        my_embed.add_field(name='Price', value=f'`{coin_price:,}$`', inline=True)
+        my_embed.add_field(name='Market cap', value=f'`#{coin_market_cap_rank}\n{coin_market_cap:,}$`', inline=True)
+        my_embed.add_field(name='ATH', value=f'`{coin_ath:,}\n{coin_ath_real_date}`', inline=True)
+        my_embed.add_field(name='Change(24h $)', value=f'`{coin_price_change_24h}$`', inline=True)
+        my_embed.add_field(name='Change(24h %)', value=f'`{coin_price_change_percentage_24h}%`', inline=True)
         my_embed.set_footer(text=f'Source: coingecko.com')
 
         await interaction.followup.send(embed=my_embed)

@@ -62,7 +62,7 @@ class ATH(Cog):
         my_embed = Embed(
             title='More info',
             url=f'https://www.coingecko.com/en/coins/{coin_id}',
-            colour=Colour.blurple(),
+            colour=Colour.blue(),
             timestamp=dt.datetime.now()
         )
 

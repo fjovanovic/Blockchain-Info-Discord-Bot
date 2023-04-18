@@ -49,18 +49,16 @@ class Price(Cog):
         coin_name = data['name']
         coin_image = data['image']['small']
         coin_price = data['market_data']['current_price']['usd']
-
-        timestamp_now = dt.datetime.now()
         
         my_embed = Embed(
-            title = 'More info',
-            url = f'https://www.coingecko.com/en/coins/{coin_id}',
-            colour = Colour.blue(),
-            timestamp=timestamp_now
+            title='More info',
+            url=f'https://www.coingecko.com/en/coins/{coin_id}',
+            colour=Colour.blue(),
+            timestamp=dt.datetime.now()
         )
 
         my_embed.set_author(name=f'{coin_name}({coin_symbol.upper()})', icon_url=coin_image)
-        my_embed.add_field(name='Price', value=f'{coin_price:,}$', inline=True)
+        my_embed.add_field(name='Price', value=f'`{coin_price:,}$`', inline=True)
         my_embed.set_footer(text=f'Source: coingecko.com')
 
         await interaction.followup.send(embed=my_embed)
