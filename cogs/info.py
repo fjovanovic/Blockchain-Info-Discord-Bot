@@ -86,7 +86,7 @@ class Info(Cog):
 
 
     @info.autocomplete('coin_symbol')
-    async def floor_price_time_frame(self, interaction: Interaction, current: str) -> List[app_commands.Choice]:
+    async def info_coin_symbol(self, interaction: Interaction, current: str) -> List[app_commands.Choice]:
         return [
             app_commands.Choice(name=coin, value=coin)
             for coin in COIN_EXAMPLES
