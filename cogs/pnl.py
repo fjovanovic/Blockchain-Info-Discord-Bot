@@ -16,7 +16,7 @@ class PNL(Cog):
         self.bot = bot
 	
 
-    @app_commands.command(name='pnl', description='Price of the coin')
+    @app_commands.command(name='pnl', description='Live PNL for the coin bough at the specific price')
     @app_commands.describe(
         position_type='Type of the opened position',
         coin_symbol='Coin symbol',
