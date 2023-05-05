@@ -18,11 +18,11 @@ class PNL(Cog):
 
     @app_commands.command(name='pnl', description='Live PNL for the coin bough at the specific price')
     @app_commands.describe(
-        position_type='Type of the opened position',
         coin_symbol='Coin symbol',
+        position_type='Type of the opened position',
         price='Price of the opened position'
     )
-    async def pnl(self, interaction: Interaction, position_type: str, coin_symbol: str, price: float):
+    async def pnl(self, interaction: Interaction, coin_symbol: str, position_type: str, price: float):
         await interaction.response.defer()
 
         position_type = position_type.lower()
