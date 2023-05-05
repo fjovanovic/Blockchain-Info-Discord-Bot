@@ -18,6 +18,10 @@ Example of `.env` file:
 TOKEN = 'YOUR_TOKEN_HERE'
 ```
 
+## Logging
+  - If you want to test the bot locally and be able to use terminal log start the script using `python main.py --test`
+  - If you want to use the bot on the server with log file start the script using `python main.py`
+
 ## Commands
 <table>
   <tr>
