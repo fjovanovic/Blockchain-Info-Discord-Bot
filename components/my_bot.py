@@ -30,7 +30,7 @@ class MyBot(commands.Bot):
                 print(f'Extension not found {e}')
     
 
-    async def on_ready(self):
+    async def on_ready(self) -> None:
         print(f'You have logged in as {self.user} !')
     
 
