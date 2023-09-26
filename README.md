@@ -1,4 +1,4 @@
-# Discord-Crypto-Tracker-Bot
+# Discord Crypto Tracker Bot
 Discord bot written in [Python](https://www.python.org/) using [discord.py](https://discordpy.readthedocs.io/en/stable/) for tracking information about the cryptocurrencies  
 
 API from [CoinGecko](https://www.coingecko.com/en/api/documentation) was used to fetch the data
@@ -7,7 +7,7 @@ API from [CoinGecko](https://www.coingecko.com/en/api/documentation) was used to
 Use the package manager [pip](https://pip.pypa.io/en/stable/) to install requirements
 
 ```bash
-pip install -r requirements.txt
+pip3 install -r requirements.txt
 ```
 
 ## Usage
