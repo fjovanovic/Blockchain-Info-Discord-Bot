@@ -1,9 +1,11 @@
 from aiohttp import ClientSession
 from typing import List
 import datetime as dt
+from io import BytesIO
+from plotly.graph_objects import Figure, Candlestick
 
 from discord import app_commands
-from discord import Interaction, Embed, Colour
+from discord import Interaction, Embed, Colour, File
 from discord.ext.commands import Cog, Bot
 
 from constants import *
@@ -45,6 +47,18 @@ class Info(Cog):
         if data is None:
             await errors.coin_not_found(interaction)
             return
+        
+        async with ClientSession() as session:
+            ohlc_data = await utils.fetch_url(
+                session, 
+                COINGECKO_OHLC_DATA_URL.replace('COIN_ID_REPLACE', coin_id)
+            )
+        
+        dates = [dt.datetime.fromtimestamp(tick[0]/1000) for tick in ohlc_data]
+        open = [tick[1] for tick in ohlc_data]
+        high = [tick[2] for tick in ohlc_data]
+        low = [tick[3] for tick in ohlc_data]
+        close = [tick[4] for tick in ohlc_data]
 
         coin_name = data['name']
         coin_image = data['image']['small']
@@ -84,7 +98,23 @@ class Info(Cog):
         my_embed.add_field(name='Change(24h %)', value=f'`{coin_price_change_percentage_24h}%`', inline=True)
         my_embed.set_footer(text=f'Source: coingecko.com')
 
-        await interaction.followup.send(embed=my_embed)
+        fig = Figure(data=[Candlestick(
+            x=dates,
+            open=open,
+            high=high,
+            low=low,
+            close=close
+        )])
+
+        fig.update_layout(xaxis_rangeslider_visible=False, template='plotly_dark')
+
+        with BytesIO() as image_binary:
+            fig.write_image(image_binary, 'PNG')
+            image_binary.seek(0)
+            my_file = File(fp=image_binary, filename='image.png')
+            my_embed.set_image(url='attachment://image.png')
+
+            await interaction.followup.send(embed=my_embed, file=my_file)
 
 
     @info.autocomplete('coin_symbol')
