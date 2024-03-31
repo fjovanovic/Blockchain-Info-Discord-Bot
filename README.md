@@ -3,24 +3,32 @@ Discord bot written in [Python](https://www.python.org/) using [discord.py](http
 
 API from [CoinGecko](https://www.coingecko.com/en/api/documentation) was used to fetch the data
 
-## Requirements
-Use the package manager [pip](https://pip.pypa.io/en/stable/) to install requirements
+## Prerequisites
+* `.env` file
+  > Provide `TOKEN` variable obtained from Discord developer portal
 
+* `venv`
+  > Before installing dependencies it is highly recommended to work in [virtual environment](https://docs.python.org/3/library/venv.html).
+  > If you want to create virtual environment `.venv`, use following command:
+  > ```bash
+  >  python -m venv .venv
+  >  ```
+  > Make sure it is activated after installation
+
+## Install dependencies
 ```bash
-pip3 install -r requirements.txt
+pip install -r requirements.txt
 ```
 
 ## Usage
-Before using the bot create `.env` file and provide the `TOKEN` variable
+* Command `python main.py`
+  > This command initiates the bot using file logging. The bot's activities, errors, and relevant information will be logged into a file named `discord.log`.
+  > File logging has advantages for long-term record-keeping, troubleshooting, and maintaining a history of the bot's performance.
+  > Keep in mind that file logging may accumulate data over time, so regular maintenance might be needed to manage log files.
 
-Example of `.env` file:
-```txt
-TOKEN = 'YOUR_TOKEN_HERE'
-```
-
-## Logging
-  - If you want to test the bot locally and be able to use terminal log start the script using `python main.py --test`
-  - If you want to use the bot on the server with log file start the script using `python main.py`
+* Command `python main.py --test`
+  > This command starts the bot in testing mode, utilizing standard console logging. When initiated with the --test flag, the bot will log information
+  > directly to the console instead of a file. Console logging is useful during testing and development phases, providing immediate feedback and visibility into the bot's activities.
 
 ## Commands
 <table>
