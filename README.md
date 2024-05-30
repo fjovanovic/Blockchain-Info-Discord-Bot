@@ -1,5 +1,5 @@
-# Discord Crypto Tracker Bot
-Discord bot written in [Python](https://www.python.org/) using [discord.py](https://discordpy.readthedocs.io/en/stable/) for tracking information about the cryptocurrencies  
+# Blockchain Info Discord Bot
+Discord bot written in [Python](https://www.python.org/) using [discord.py](https://discordpy.readthedocs.io/en/stable/) for tracking information on blockchain  
 
 API from [CoinGecko](https://www.coingecko.com/en/api/documentation) was used to fetch the data
 
